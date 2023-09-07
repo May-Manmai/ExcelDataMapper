@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using OfficeOpenXml;
 
@@ -8,20 +9,27 @@ public class MyDataFormat
     public string? customerReference { get; set; }
     public string? customerName { get; set; }
     public string? deliveryFormattedAddress { get; set; }
-
-    // Add other properties as needed to match your desired format
-
 }
 
 class Program
 {
     static void Main(string[] args)
     {
-        string excelFilePath = "/Users/tangmay/Documents/1. SOLBOX/Import spreadsheets/Drillcut/testExcelApp.xlsx";
+        string excelFilePath = "/Users/tangmay/Documents/1. SOLBOX/Test files/testExcelApp.xlsx";
 
         if (File.Exists(excelFilePath))
         {
-            ImportExcelData(excelFilePath);
+            List<MyDataFormat> data = ImportExcelData(excelFilePath);
+
+            // Now you can work with the 'data' list, which contains the mapped Excel data.
+            foreach (var item in data)
+            {
+                Console.WriteLine($"Delivery Store Number: {item.deliveryStoreNumber}");
+                Console.WriteLine($"Customer Reference: {item.customerReference}");
+                Console.WriteLine($"Customer Name: {item.customerName}");
+                Console.WriteLine($"Delivery Formatted Address: {item.deliveryFormattedAddress}");
+                Console.WriteLine();
+            }
         }
         else
         {
@@ -29,40 +37,29 @@ class Program
         }
     }
 
-    static void ImportExcelData(string filePath)
+    static List<MyDataFormat> ImportExcelData(string filePath)
     {
-        // Your Excel data import code here
+        List<MyDataFormat> mappedData = new List<MyDataFormat>();
+
         using (var package = new ExcelPackage(new FileInfo(filePath)))
         {
             var worksheet = package.Workbook.Worksheets[0];
             int rowCount = worksheet.Dimension.Rows;
-            int colCount = worksheet.Dimension.Columns;
-            for (int row = 1; row <= rowCount; row++)
+
+            // Skip the header row and start from row 2
+            for (int row = 2; row <= rowCount; row++)
             {
-                for (int col = 1; col <= colCount; col++)
-                {
-                    Console.Write($"{worksheet.Cells[row, col].Text}\t");
-                }
-                Console.WriteLine();
+                MyDataFormat mappedItem = new MyDataFormat();
+
+                mappedItem.deliveryStoreNumber = worksheet.Cells[row, 1].Text;
+                mappedItem.customerReference = worksheet.Cells[row, 2].Text;
+                mappedItem.customerName = worksheet.Cells[row, 3].Text;
+                mappedItem.deliveryFormattedAddress = worksheet.Cells[row, 4].Text;
+
+                mappedData.Add(mappedItem);
             }
         }
-    }
 
-    static List<MyDataFormat> MapExcelDataToMyFormat(ExcelWorksheet worksheet)
-    {
-        List<MyDataFormat> mappedData = new List<MyDataFormat>();
-        for (int row = 2; row <= worksheet.Dimension.Rows; row++)
-        {
-            MyDataFormat mappedItem = new MyDataFormat();
-
-            mappedItem.deliveryStoreNumber = worksheet.Cells[row, 1].Text;
-            mappedItem.customerReference = worksheet.Cells[row, 1].Text;
-            mappedItem.customerName = worksheet.Cells[row, 1].Text;
-            mappedItem.deliveryFormattedAddress = worksheet.Cells[row, 1].Text;
-
-            mappedData.Add(mappedItem);
-
-        }
         return mappedData;
     }
 }
